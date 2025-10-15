@@ -1,13 +1,17 @@
 import openai
+import os
 
-openai.api_key = "YOUR_OPENAI_API_KEY"
+# ✅ Use OpenRouter API instead of OpenAI
+openai.api_key = os.getenv("OPENROUTER_API_KEY") or "YOUR_OPENROUTER_API_KEY"
+openai.base_url = "https://openrouter.ai/api/v1"
 
 def get_personalized_answer(question, mbti, learning_style, language="en"):
+    # 🧠 Create prompt according to language
     if language == "hi":
         prompt = f"""
         आप एक विशेषज्ञ शिक्षक हैं जो छात्रों की MBTI व्यक्तित्व और सीखने की शैली को समझते हैं।
         छात्र की MBTI प्रकार है {mbti} और उसकी सीखने की शैली है {learning_style}।
-        इस प्रश्न का उत्तर बच्चों के नहीं बल्कि छात्रों के स्तर पर, आसान भाषा में और विस्तार से दें:
+        इस प्रश्न का उत्तर छात्रों के स्तर पर, आसान भाषा में और विस्तार से दें:
         {question}
         """
     else:
@@ -18,10 +22,14 @@ def get_personalized_answer(question, mbti, learning_style, language="en"):
         {question}
         """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role":"system", "content": prompt}],
-        temperature=0.7
+    # 🧩 Call OpenRouter API
+    response = openai.chat.completions.create(
+        model="openai/gpt-4o-mini",  # you can replace this with any model from OpenRouter
+        messages=[
+            {"role": "system", "content": "You are a helpful AI study assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
     )
 
     return response.choices[0].message.content
