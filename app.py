@@ -4,32 +4,31 @@ import json
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables for local development
 load_dotenv()
 
-# Configuration
-API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = os.getenv("MODEL", "gpt-4o-mini")
+# Configuration - Use Streamlit secrets for production, .env for local
+try:
+    # Try to get API key from Streamlit secrets (for Streamlit Cloud)
+    API_KEY = st.secrets["OPENROUTER_API_KEY"]
+    MODEL = st.secrets.get("MODEL", "gpt-4o-mini")
+except:
+    # Fallback to .env file for local development
+    API_KEY = os.getenv("OPENROUTER_API_KEY")
+    MODEL = os.getenv("MODEL", "gpt-4o-mini")
 
 # Validate API key
 if not API_KEY or API_KEY == "your_openrouter_api_key_here":
     st.error("🚨 API Key Missing!")
     st.warning("""
-    To use this app, you need to set up your OpenRouter API key:
+    For **Streamlit Cloud deployment**, add your API key to Streamlit secrets:
+    1. Go to your Streamlit Cloud app dashboard
+    2. Navigate to "Secrets" in the app settings
+    3. Add: `OPENROUTER_API_KEY = "your_actual_api_key_here"`
 
-    1. **Get an API Key:**
-       - Visit [OpenRouter](https://openrouter.ai/)
-       - Sign up for a free account
-       - Go to API Keys section and create a new key
+    For **local development**, update the .env file with your API key.
 
-    2. **Update the .env file:**
-       - Open the `.env` file in your project folder
-       - Replace `your_openrouter_api_key_here` with your actual API key
-       - Save the file
-
-    3. **Restart the app** after updating the API key
-
-    **Note:** The API key is stored locally and never shared. You can use the free tier for testing.
+    **Note:** Never commit API keys to your repository!
     """)
     st.stop()  # Stop execution until API key is configured
 
