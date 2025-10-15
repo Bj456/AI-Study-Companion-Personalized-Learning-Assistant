@@ -30,6 +30,7 @@ if not API_KEY or API_KEY == "your_openrouter_api_key_here":
 
     **Note:** Never commit API keys to your repository!
     """)
+    st.info(f"Debug: API_KEY loaded: {bool(API_KEY)}, Length: {len(API_KEY) if API_KEY else 0}")
     st.stop()  # Stop execution until API key is configured
 
 # System Prompt
@@ -243,6 +244,9 @@ if prompt := st.chat_input("Type your question here... / अपना प्र�
             message_placeholder.markdown("Thinking...")
         
         try:
+            # Debug: Show API call details
+            st.info(f"Debug: Making API call with model {MODEL}")
+            
             # Prepare the API request
             headers = {
                 "Authorization": f"Bearer {API_KEY}",
@@ -294,6 +298,9 @@ Format your response with clear sections for each part."""
             # Process the response
             data = response.json()
             assistant_response = data["choices"][0]["message"]["content"]
+            
+            # Debug: Show response details
+            st.info(f"Debug: API call successful, response length: {len(assistant_response)} characters")
             
             # Show toast if response was slow (indicates potential network issues)
             if response.elapsed.total_seconds() > 10:
