@@ -10,7 +10,31 @@ load_dotenv()
 # Configuration
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = os.getenv("MODEL", "gpt-4o-mini")
-SYSTEM_PROMPT = """You are LearningBuddy, a friendly, bilingual AI tutor for children in Grades 1–12. 
+
+# Validate API key
+if not API_KEY or API_KEY == "your_openrouter_api_key_here":
+    st.error("🚨 API Key Missing!")
+    st.warning("""
+    To use this app, you need to set up your OpenRouter API key:
+
+    1. **Get an API Key:**
+       - Visit [OpenRouter](https://openrouter.ai/)
+       - Sign up for a free account
+       - Go to API Keys section and create a new key
+
+    2. **Update the .env file:**
+       - Open the `.env` file in your project folder
+       - Replace `your_openrouter_api_key_here` with your actual API key
+       - Save the file
+
+    3. **Restart the app** after updating the API key
+
+    **Note:** The API key is stored locally and never shared. You can use the free tier for testing.
+    """)
+    st.stop()  # Stop execution until API key is configured
+
+# System Prompt
+SYSTEM_PROMPT = """You are LearningBuddy, a friendly, bilingual AI tutor for children in Grades 1–12.
 
 Your role is to:
 1. Provide clear, age-appropriate explanations in simple language
