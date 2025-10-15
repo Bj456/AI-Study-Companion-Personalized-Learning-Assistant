@@ -2,18 +2,46 @@ import streamlit as st
 from helper import get_personalized_answer
 import threading
 
-st.set_page_config(page_title="AI Study Companion", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="AI Study Companion", page_icon="🎓", layout="centered", initial_sidebar_state="expanded")
 
 st.markdown(
     """
-    <h1 style='text-align:center; color:#2B547E;'>🎓 AI Study Companion</h1>
-    <h4 style='text-align:center;'>Your Personalized Learning Assistant</h4>
+    <style>
+    /* Mobile-friendly styles */
+    @media (max-width: 768px) {
+        .stTextInput, .stSelectbox, .stTextArea, .stButton {
+            font-size: 16px !important;
+            padding: 12px !important;
+        }
+        .stSidebar {
+            padding: 10px !important;
+        }
+        h1 {
+            font-size: 24px !important;
+        }
+        h4 {
+            font-size: 18px !important;
+        }
+        .stMarkdown {
+            font-size: 14px !important;
+        }
+    }
+    /* General improvements for touch */
+    .stButton button {
+        height: 50px !important;
+        font-size: 16px !important;
+    }
+    </style>
     """,
     unsafe_allow_html=True
 )
 
 # ---------- Sidebar: Student Profile ----------
 st.sidebar.header("🧠 Student Profile")
+
+if "name" not in st.session_state:
+    st.session_state.name = ""
+st.session_state.name = st.sidebar.text_input("Enter your name:", value=st.session_state.name)
 
 if "mbti" not in st.session_state:
     st.session_state.mbti = "INTJ"
@@ -33,7 +61,8 @@ st.session_state.language = st.sidebar.radio("Choose Language:", ["English", "Hi
 
 # ---------- Main Area ----------
 st.markdown("### Ask Your Question 👇")
-question = st.text_area("Enter your question here...", key="question_input", height=120)
+st.info("📱 Tip: For the best experience on mobile, use landscape mode or expand your browser!")
+question = st.text_area("Enter your question here...", key="question_input", height=150)
 
 # Initialize answer in session state
 if "answer" not in st.session_state:
@@ -43,7 +72,8 @@ if "answer" not in st.session_state:
 def fetch_answer():
     st.session_state.answer = get_personalized_answer(
         question, st.session_state.mbti, st.session_state.learning_style,
-        language="hi" if st.session_state.language=="Hindi" else "en"
+        language="hi" if st.session_state.language=="Hindi" else "en",
+        name=st.session_state.name
     )
 
 # ---------- Button ----------
