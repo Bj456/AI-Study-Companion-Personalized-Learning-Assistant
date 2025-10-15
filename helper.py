@@ -1,12 +1,18 @@
 import requests
 import streamlit as st
 
-API_KEY = st.secrets["OPENROUTER_API_KEY"]
 MODEL = "gpt-4o-mini"
 
 def get_personalized_answer(question, mbti, learning_style, language="en", name=""):
     if not question.strip():
         return "Please enter a valid question."
+
+    # Check API key
+    try:
+        API_KEY = st.secrets["OPENROUTER_API_KEY"]
+    except KeyError:
+        st.error("API key not found. Please set OPENROUTER_API_KEY in Streamlit secrets.")
+        return "Error: API key missing. Check your setup."
 
     if language == "hi":
         prompt = f"""
@@ -48,6 +54,8 @@ def get_personalized_answer(question, mbti, learning_style, language="en", name=
         - Always be positive, motivating, and supportive.
         """
 
+    import time  # For retries
+
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -59,17 +67,9 @@ def get_personalized_answer(question, mbti, learning_style, language="en", name=
             {"role": "system", "content": "You are a helpful AI study assistant."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.7
+        "temperature": 0.7,
+        "timeout": 30  # Add timeout to prevent hanging
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        st.error("⚠️ Error generating answer:")
-        st.write(str(e))
-        if "response" in locals():
-            st.write("Raw API response:", response.text)
-        return "Sorry, something went wrong. Please check your API key or try again."
+    max_retries = 3
+    for attempt in range(max_retries):
