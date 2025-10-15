@@ -1,10 +1,8 @@
-from openrouter import OpenRouter
+import requests
 import streamlit as st
 
-# Load API key from Streamlit secrets
-api_key = st.secrets["OPENROUTER_API_KEY"]
-
-client = OpenRouter(api_key=api_key)
+API_KEY = st.secrets["OPENROUTER_API_KEY"]
+MODEL = "gpt-4o-mini"
 
 def get_personalized_answer(question, mbti, learning_style, language="en"):
     if language == "hi":
@@ -22,20 +20,28 @@ def get_personalized_answer(question, mbti, learning_style, language="en"):
         {question}
         """
 
-    try:
-        # Use OpenRouter client chat method
-        response = client.chat.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful AI study assistant."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.7
-        )
-        # Extract the text safely
-        return response['choices'][0]['message']['content']
+    url = f"https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a helpful AI study assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
+    }
 
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()  # raise error if bad status
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
     except Exception as e:
         st.error("⚠️ Error generating answer:")
         st.write(str(e))
-        return "Sorry, something went wrong. Please check your API key and model."
+        if "response" in locals():
+            st.write("Raw API response:", response.text)
+        return "Sorry, something went wrong. Please check your API key or try again."
