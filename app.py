@@ -60,10 +60,14 @@ if "language" not in st.session_state:
     st.session_state.language = "English"
 st.session_state.language = st.sidebar.radio("Choose Language:", ["English", "Hindi"])
 
+# Initialize question in session state
+if "question" not in st.session_state:
+    st.session_state.question = ""
+
 # ---------- Main Area ----------
 st.markdown("### Ask Your Question 👇")
 st.info("📱 Tip: For the best experience on mobile, use landscape mode or expand your browser!")
-question = st.text_area("Enter your question here...", key="question_input", height=150)
+st.session_state.question = st.text_area("Enter your question here...", value=st.session_state.question, key="question_input", height=150)
 
 # Initialize answer in session state
 if "answer" not in st.session_state:
@@ -72,21 +76,20 @@ if "answer" not in st.session_state:
 # ---------- Function to fetch answer in a separate thread ----------
 def fetch_answer():
     st.session_state.answer = get_personalized_answer(
-        question, st.session_state.mbti, st.session_state.learning_style,
+        st.session_state.question, st.session_state.mbti, st.session_state.learning_style,
         language="hi" if st.session_state.language=="Hindi" else "en",
         name=st.session_state.name
     )
 
 # ---------- Button ----------
 if st.button("Get Personalized Answer"):
-    if not question.strip():
+    if not st.session_state.question.strip():
         st.error("Please enter a question first.")
     else:
         with st.spinner("Generating your personalized answer..."):
             thread = threading.Thread(target=fetch_answer)
             thread.start()
-            # Wait a short time or use a flag for better UX
-            time.sleep(1)  # Small delay to show spinner
+            # Removed time.sleep to prevent UI freeze
         st.success("Answer is being generated! Check below in a moment.")
 
 # ---------- Display Answer ----------
