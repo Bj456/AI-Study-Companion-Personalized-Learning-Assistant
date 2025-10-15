@@ -73,3 +73,25 @@ def get_personalized_answer(question, mbti, learning_style, language="en", name=
 
     max_retries = 3
     for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                time.sleep(2)  # Wait before retry
+                continue
+            st.error("Request timed out. Please check your internet connection.")
+            return "Error: Request timed out. Try again."
+        except requests.exceptions.ConnectionError:
+            if attempt < max_retries - 1:
+                time.sleep(2)
+                continue
+            st.error("Connection error. Please check your network or API status.")
+            return "Error: Connection failed. Check your internet or OpenRouter status."
+        except Exception as e:
+            st.error(f"⚠️ Error generating answer (Attempt {attempt + 1}): {str(e)}")
+            if "response" in locals():
+                st.write("Raw API response:", response.text)
+            return "Sorry, something went wrong. Please try again."
