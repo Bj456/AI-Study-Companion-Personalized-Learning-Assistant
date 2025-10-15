@@ -3,3 +3,7 @@ openai
 pandas
 SpeechRecognition
 pyttsx3
+streamlit
+openai
+pandas
+openrouter
