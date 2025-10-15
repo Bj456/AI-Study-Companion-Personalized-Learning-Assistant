@@ -1,12 +1,12 @@
 import openai
-import os
+import streamlit as st
 
-# ✅ Use OpenRouter API instead of OpenAI
-openai.api_key = os.getenv("OPENROUTER_API_KEY") or "YOUR_OPENROUTER_API_KEY"
+# ✅ Load your API key from Streamlit secrets
+openai.api_key = st.secrets["OPENROUTER_API_KEY"]
 openai.base_url = "https://openrouter.ai/api/v1"
 
 def get_personalized_answer(question, mbti, learning_style, language="en"):
-    # 🧠 Create prompt according to language
+    # Create the adaptive prompt
     if language == "hi":
         prompt = f"""
         आप एक विशेषज्ञ शिक्षक हैं जो छात्रों की MBTI व्यक्तित्व और सीखने की शैली को समझते हैं।
@@ -22,9 +22,9 @@ def get_personalized_answer(question, mbti, learning_style, language="en"):
         {question}
         """
 
-    # 🧩 Call OpenRouter API
+    # 🧠 Make API call
     response = openai.chat.completions.create(
-        model="openai/gpt-4o-mini",  # you can replace this with any model from OpenRouter
+        model="openai/gpt-4o-mini",  # You can choose other models
         messages=[
             {"role": "system", "content": "You are a helpful AI study assistant."},
             {"role": "user", "content": prompt}
@@ -32,4 +32,11 @@ def get_personalized_answer(question, mbti, learning_style, language="en"):
         temperature=0.7,
     )
 
-    return response.choices[0].message.content
+    # ✅ Fix: safely extract text
+    try:
+        return response.choices[0].message["content"]
+    except Exception as e:
+        # If response format changes or fails
+        st.error("⚠️ Error extracting response: " + str(e))
+        st.write("Full response object:", response)
+        return "Sorry, I couldn’t process that. Please try again."
