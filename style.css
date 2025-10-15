@@ -1,0 +1,13 @@
+body {
+    background-color: #F4F9FF;
+    color: #222;
+    font-family: 'Segoe UI', sans-serif;
+}
+h1, h4 {
+    color: #2B547E;
+}
+button {
+    background-color: #4CAF50 !important;
+    color: white !important;
+    border-radius: 10px;
+}
