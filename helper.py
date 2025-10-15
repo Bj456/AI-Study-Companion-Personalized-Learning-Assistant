@@ -1,12 +1,12 @@
 import openai
 import streamlit as st
 
-# ✅ Load your API key from Streamlit secrets
+# ✅ Load your OpenRouter API key securely
 openai.api_key = st.secrets["OPENROUTER_API_KEY"]
 openai.base_url = "https://openrouter.ai/api/v1"
 
 def get_personalized_answer(question, mbti, learning_style, language="en"):
-    # Create the adaptive prompt
+    # 🧠 Build the prompt dynamically
     if language == "hi":
         prompt = f"""
         आप एक विशेषज्ञ शिक्षक हैं जो छात्रों की MBTI व्यक्तित्व और सीखने की शैली को समझते हैं।
@@ -22,21 +22,28 @@ def get_personalized_answer(question, mbti, learning_style, language="en"):
         {question}
         """
 
-    # 🧠 Make API call
-    response = openai.chat.completions.create(
-        model="openai/gpt-4o-mini",  # You can choose other models
-        messages=[
-            {"role": "system", "content": "You are a helpful AI study assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-    )
-
-    # ✅ Fix: safely extract text
+    # 🚀 Make the API request
     try:
-        return response.choices[0].message["content"]
+        response = openai.chat.completions.create(
+            model="openai/gpt-4o-mini",  # change model as needed
+            messages=[
+                {"role": "system", "content": "You are a helpful AI study assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+        )
+
+        # ✅ Universal extractor (handles different API formats)
+        if hasattr(response.choices[0], "message"):
+            return response.choices[0].message.get("content", "")
+        elif hasattr(response.choices[0], "text"):
+            return response.choices[0].text
+        else:
+            # fallback for newer SDK structures
+            return response.choices[0].get("message", {}).get("content", "")
+
     except Exception as e:
-        # If response format changes or fails
-        st.error("⚠️ Error extracting response: " + str(e))
-        st.write("Full response object:", response)
-        return "Sorry, I couldn’t process that. Please try again."
+        st.error("⚠️ Error while fetching response:")
+        st.write(str(e))
+        st.write("Raw API response:", response if "response" in locals() else "No response returned")
+        return "Sorry, something went wrong while generating the answer. Please try again."
