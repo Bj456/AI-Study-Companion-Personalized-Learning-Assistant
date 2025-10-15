@@ -1,6 +1,7 @@
 import streamlit as st
 from helper import get_personalized_answer
 import threading
+import time
 
 st.set_page_config(page_title="AI Study Companion", page_icon="🎓", layout="centered", initial_sidebar_state="expanded")
 
@@ -78,11 +79,20 @@ def fetch_answer():
 
 # ---------- Button ----------
 if st.button("Get Personalized Answer"):
-    with st.spinner("Generating your personalized answer..."):
-        thread = threading.Thread(target=fetch_answer)
-        thread.start()
-        thread.join()  # Wait here so spinner shows until done
+    if not question.strip():
+        st.error("Please enter a question first.")
+    else:
+        with st.spinner("Generating your personalized answer..."):
+            thread = threading.Thread(target=fetch_answer)
+            thread.start()
+            # Wait a short time or use a flag for better UX
+            time.sleep(1)  # Small delay to show spinner
+        st.success("Answer is being generated! Check below in a moment.")
 
 # ---------- Display Answer ----------
-st.markdown("#### 🧾 Answer:")
-st.write(st.session_state.answer)
+if st.session_state.answer:
+    st.markdown("#### 🧾 Answer:")
+    st.write(st.session_state.answer)
+else:
+    st.markdown("#### 🧾 Answer:")
+    st.write("Your personalized answer will appear here after clicking the button.")
