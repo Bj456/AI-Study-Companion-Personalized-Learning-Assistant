@@ -153,7 +153,6 @@ response = requests.post(
     headers=headers,
     json=payload,
     timeout=30  # Add timeout
-)
         response.raise_for_status()
         
         # Get the response
