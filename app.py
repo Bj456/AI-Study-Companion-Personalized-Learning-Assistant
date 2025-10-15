@@ -147,11 +147,13 @@ Please provide a helpful, age-appropriate response in {st.session_state.language
     
     try:
         # Make the API call
-        response = requests.post(
-            "https://api.openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
+       # In your app.py, update the API call to:
+response = requests.post(
+    "https://openrouter.ai/api/v1/chat/completions",  # Updated URL
+    headers=headers,
+    json=payload,
+    timeout=30  # Add timeout
+)
         response.raise_for_status()
         
         # Get the response
