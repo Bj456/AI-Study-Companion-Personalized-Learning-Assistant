@@ -24,7 +24,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS for better mobile experience
+# Custom CSS
 st.markdown("""
     <style>
     @media (max-width: 768px) {
@@ -51,22 +51,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state with default values
+# Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", 
-         "content": "👋 Hello! I'm LearningBuddy. Which language would you like to learn in? / नमस्ते! आप किस भाषा में सीखना चाहेंगे?"
-        }
+         "content": "👋 Hello! I'm LearningBuddy. Which language would you like to learn in? / नमस्ते! आप किस भाषा में सीखना चाहेंगे?"}
     ]
     st.session_state.language = "English"
     st.session_state.subject = "Science"
     st.session_state.grade = 6
 
-# Sidebar for settings
+# Sidebar
 with st.sidebar:
     st.title("⚙️ Settings")
     
-    # Language selection
     language_options = ["English", "हिंदी (Hindi)"]
     st.session_state.language = st.radio(
         "Choose Language / भाषा चुनें:",
@@ -74,7 +72,6 @@ with st.sidebar:
         index=language_options.index(st.session_state.language) if st.session_state.language in language_options else 0
     )
     
-    # Subject selection
     subject_list = ["Science", "Maths", "English", "EVS", "Hindi"]
     st.session_state.subject = st.selectbox(
         "Select Subject / विषय चुनें:",
@@ -82,14 +79,12 @@ with st.sidebar:
         index=subject_list.index(st.session_state.subject) if st.session_state.subject in subject_list else 0
     )
     
-    # Grade selection
     try:
         grade_index = int(st.session_state.grade) - 1
-        if grade_index < 0 or grade_index > 11:  # Grades 1-12
-            grade_index = 5  # Default to grade 6 if out of range
+        if grade_index < 0 or grade_index > 11:
+            grade_index = 5
     except:
-        grade_index = 5  # Default to grade 6 if there's any error
-
+        grade_index = 5
     st.session_state.grade = st.selectbox(
         "Select Class / कक्षा चुनें:",
         list(range(1, 13)),
@@ -108,25 +103,20 @@ for message in st.session_state.messages:
 
 # Chat input
 if prompt := st.chat_input("Type your question here... / अपना प्रश्न यहाँ टाइप करें..."):
-    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # Show typing indicator
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         message_placeholder.markdown("Thinking...")
     
-    # Prepare the API request
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
     
-    # Add context to the prompt
     context = f"""Language: {st.session_state.language}
 Subject: {st.session_state.subject}
 Class: {st.session_state.grade}
@@ -146,24 +136,19 @@ Please provide a helpful, age-appropriate response in {st.session_state.language
     }
     
     try:
-        # Make the API call
-       # In your app.py, update the API call to:
-response = requests.post(
-    "https://openrouter.ai/api/v1/chat/completions",  # Updated URL
-    headers=headers,
-    json=payload,
-    timeout=30  # Add timeout
-)
+        # API call
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
         response.raise_for_status()
         
-        # Get the response
         data = response.json()
         assistant_response = data["choices"][0]["message"]["content"]
         
-        # Update the chat
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-        
-        # Update the message
         message_placeholder.markdown(assistant_response)
         
     except Exception as e:
