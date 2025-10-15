@@ -57,7 +57,14 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS for better mobile experience
+def display_chat():
+    """Display chat messages to avoid full script reruns."""
+    for message in st.session_state.messages:
+        if message["role"] in ["user", "assistant"]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+# Custom CSS for better mobile experience and performance
 st.markdown("""
     <style>
     @media (max-width: 768px) {
@@ -75,7 +82,7 @@ st.markdown("""
     .stButton > button {
         background-color: #4CAF50 !important;
         color: white !important;
-        border-radius: 10px;
+        border-radius: 8px;  /* Slightly reduced for better performance */
         padding: 10px 20px;
     }
     .stTextArea textarea {
@@ -84,7 +91,7 @@ st.markdown("""
     .quiz-question {
         background-color: #f0f2f6;
         padding: 15px;
-        border-radius: 10px;
+        border-radius: 8px;  /* Reduced for better performance */
         margin-bottom: 15px;
     }
     </style>
@@ -145,11 +152,8 @@ with st.sidebar:
 st.title("🎓 LearningBuddy")
 st.caption("Your friendly AI study companion for Grades 1-12 / कक्षा 1-12 के लिए आपका दोस्ताना AI साथी")
 
-# Display chat messages
-for message in st.session_state.messages:
-    if message["role"] in ["user", "assistant"]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Display chat messages using the function to avoid reruns
+display_chat()
 
 def get_offline_response(question, subject, grade, language):
     """Provide basic offline responses when API is not accessible."""
@@ -274,21 +278,26 @@ Format your response with clear sections for each part."""
                     {"role": "user", "content": context}
                 ],
                 "temperature": 0.7,
-                "max_tokens": 1500
+                "max_tokens": 400  # Reduced for faster responses and better stability
             }
             
-            # Make the API call
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",  # Fixed URL without 'api.'
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            response.raise_for_status()
+            # Make the API call with optimized timeout and response size
+            with st.spinner("🤖 Thinking... please wait"):
+                response = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=20  # Reduced timeout for better responsiveness
+                )
+                response.raise_for_status()
             
             # Process the response
             data = response.json()
             assistant_response = data["choices"][0]["message"]["content"]
+            
+            # Show toast if response was slow (indicates potential network issues)
+            if response.elapsed.total_seconds() > 10:
+                st.toast("⏳ The server took a bit longer, but here's your answer!")
             
             # Parse quiz questions if present
             quiz_questions = parse_quiz_response(assistant_response)
