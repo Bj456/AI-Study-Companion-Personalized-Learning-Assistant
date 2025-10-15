@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import json
 import os
 from dotenv import load_dotenv
 
@@ -52,36 +51,49 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
+# Initialize session state with default values
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", 
          "content": "👋 Hello! I'm LearningBuddy. Which language would you like to learn in? / नमस्ते! आप किस भाषा में सीखना चाहेंगे?"
         }
     ]
-    st.session_state.language = None
-    st.session_state.subject = None
-    st.session_state.grade = None
+    st.session_state.language = "English"
+    st.session_state.subject = "Science"
+    st.session_state.grade = 6
 
 # Sidebar for settings
 with st.sidebar:
     st.title("⚙️ Settings")
+    
+    # Language selection
+    language_options = ["English", "हिंदी (Hindi)"]
     st.session_state.language = st.radio(
         "Choose Language / भाषा चुनें:",
-        ["English", "हिंदी (Hindi)"],
-        index=0 if st.session_state.get("language") == "English" else 1 if st.session_state.get("language") == "हिंदी (Hindi)" else 0
+        language_options,
+        index=language_options.index(st.session_state.language) if st.session_state.language in language_options else 0
     )
     
+    # Subject selection
+    subject_list = ["Science", "Maths", "English", "EVS", "Hindi"]
     st.session_state.subject = st.selectbox(
         "Select Subject / विषय चुनें:",
-        ["Science", "Maths", "English", "EVS", "Hindi"],
-        index=["Science", "Maths", "English", "EVS", "Hindi"].index(st.session_state.get("subject", "Science"))
+        subject_list,
+        index=subject_list.index(st.session_state.subject) if st.session_state.subject in subject_list else 0
     )
     
+    # Grade selection
+    try:
+        grade_index = int(st.session_state.grade) - 1
+        if grade_index < 0 or grade_index > 11:  # Grades 1-12
+            grade_index = 5  # Default to grade 6 if out of range
+    except:
+        grade_index = 5  # Default to grade 6 if there's any error
+
     st.session_state.grade = st.selectbox(
         "Select Class / कक्षा चुनें:",
         list(range(1, 13)),
-        index=st.session_state.get("grade", 6) - 1 if st.session_state.get("grade") else 5
+        index=grade_index
     )
 
 # Main chat interface
@@ -157,44 +169,3 @@ Please provide a helpful, age-appropriate response in {st.session_state.language
         st.error(error_msg)
         st.session_state.messages.append({"role": "assistant", "content": error_msg})
         message_placeholder.markdown(error_msg)
-st.session_state.language = st.sidebar.radio("Choose Language:", ["English", "Hindi"])
-
-# Initialize question in session state
-if "question" not in st.session_state:
-    st.session_state.question = ""
-
-# ---------- Main Area ----------
-st.markdown("### Ask Your Question 👇")
-st.info("📱 Tip: For the best experience on mobile, use landscape mode or expand your browser!")
-st.session_state.question = st.text_area("Enter your question here...", value=st.session_state.question, key="question_input", height=150)
-
-# Initialize answer in session state
-if "answer" not in st.session_state:
-    st.session_state.answer = ""
-
-# ---------- Function to fetch answer in a separate thread ----------
-def fetch_answer():
-    st.session_state.answer = get_personalized_answer(
-        st.session_state.question, st.session_state.mbti, st.session_state.learning_style,
-        language="hi" if st.session_state.language=="Hindi" else "en",
-        name=st.session_state.name
-    )
-
-# ---------- Button ----------
-if st.button("Get Personalized Answer"):
-    if not st.session_state.question.strip():
-        st.error("Please enter a question first.")
-    else:
-        with st.spinner("Generating your personalized answer..."):
-            thread = threading.Thread(target=fetch_answer)
-            thread.start()
-            # Removed time.sleep to prevent UI freeze
-        st.success("Answer is being generated! Check below in a moment.")
-
-# ---------- Display Answer ----------
-if st.session_state.answer:
-    st.markdown("#### 🧾 Answer:")
-    st.write(st.session_state.answer)
-else:
-    st.markdown("#### 🧾 Answer:")
-    st.write("Your personalized answer will appear here after clicking the button.")
