@@ -128,6 +128,34 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+def get_offline_response(question, subject, grade, language):
+    """Provide basic offline responses when API is not accessible."""
+    responses = {
+        "photosynthesis": {
+            "English": "Photosynthesis is how plants make their food using sunlight! 🌱☀️ Plants take in carbon dioxide from the air and water from the soil, and use sunlight to turn them into glucose (sugar) and oxygen. The green pigment chlorophyll helps capture sunlight. This process happens in the leaves of plants.",
+            "हिंदी": "प्रकाश संश्लेषण पौधों का भोजन बनाने का तरीका है जो सूरज की रोशनी का उपयोग करता है! 🌱☀️ पौधे हवा से कार्बन डाइऑक्साइड और मिट्टी से पानी लेते हैं, और सूरज की रोशनी का उपयोग करके उन्हें ग्लूकोज (चीनी) और ऑक्सीजन में बदल देते हैं। हरी वर्णक क्लोरोफिल सूरज की रोशनी को पकड़ने में मदद करता है। यह प्रक्रिया पौधों की पत्तियों में होती है।"
+        },
+        "science": {
+            "English": "Science helps us understand how the world works! 🔬 It includes biology (study of living things), chemistry (study of matter), and physics (study of energy and forces). Scientists use experiments and observations to learn new things.",
+            "हिंदी": "विज्ञान हमें दुनिया कैसे काम करती है यह समझने में मदद करता है! 🔬 इसमें जीव विज्ञान (जीवित चीजों का अध्ययन), रसायन विज्ञान (पदार्थ का अध्ययन), और भौतिकी (ऊर्जा और बलों का अध्ययन) शामिल हैं। वैज्ञानिक नए चीजें सीखने के लिए प्रयोग और अवलोकन का उपयोग करते हैं।"
+        }
+    }
+    
+    # Simple keyword matching for basic responses
+    question_lower = question.lower()
+    
+    if "photosynthesis" in question_lower or "प्रकाश संश्लेषण" in question_lower:
+        topic = "photosynthesis"
+    elif any(word in question_lower for word in ["science", "विज्ञान", "what is science", "विज्ञान क्या है"]):
+        topic = "science"
+    else:
+        topic = None
+    
+    if topic and topic in responses:
+        return responses[topic].get(language, responses[topic]["English"])
+    else:
+        return f"I'm currently in offline mode and can't provide detailed answers. Please try again when you have internet connection. For now, I can suggest watching educational videos on YouTube about your topic: '{question}'"
+
 def parse_quiz_response(response_text):
     """Parse the quiz questions and answers from the AI response."""
     questions = []
@@ -228,7 +256,7 @@ Format your response with clear sections for each part."""
             
             # Make the API call
             response = requests.post(
-                "https://api.openrouter.ai/api/v1/chat/completions",
+                "https://openrouter.ai/api/v1/chat/completions",  # Fixed URL without 'api.'
                 headers=headers,
                 json=payload,
                 timeout=30
@@ -253,8 +281,27 @@ Format your response with clear sections for each part."""
             if any(word in assistant_response.lower() for word in ['youtube', 'video', 'watch']):
                 st.session_state.waiting_for_video_confirmation = True
             
+        except requests.exceptions.ConnectionError as e:
+            if "NameResolutionError" in str(e) or "Name or service not known" in str(e):
+                # Try offline mode as fallback
+                assistant_response = get_offline_response(prompt, st.session_state.subject, st.session_state.grade, st.session_state.language)
+                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                message_placeholder.markdown(assistant_response)
+                st.warning("🔄 Using offline mode - some features may be limited")
+            else:
+                error_msg = f"🔌 Connection Error: {str(e)}"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                message_placeholder.markdown(error_msg)
+            
+        except requests.exceptions.RequestException as e:
+            error_msg = f"🚫 Network Error: {str(e)}"
+            st.error(error_msg)
+            st.session_state.messages.append({"role": "assistant", "content": error_msg})
+            message_placeholder.markdown(error_msg)
+            
         except Exception as e:
-            error_msg = f"Sorry, I encountered an error: {str(e)}"
+            error_msg = f"❌ Unexpected Error: {str(e)}"
             st.error(error_msg)
             st.session_state.messages.append({"role": "assistant", "content": error_msg})
             message_placeholder.markdown(error_msg)
